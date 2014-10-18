@@ -3,28 +3,27 @@
 
 #include "MersenneTwister.h"
 #include "zombiesim.hpp"
-#include "Zombie.hpp"
-#include "Human.hpp"
-#include "GridCell.hpp"
 
-int getPopulation(GridCell***);
+int getPopulation(Cell** Mesh);
 
-double getPairingNumber(GridCell***);
+double getPairingNumber(Cell** Mesh);
 
-double getBirthRate(GridCell***);
+double getBirthRate(Cell** Mesh);
 
-void getAgeGroupNumbers(GridCell***, int*);
+void getDeathProb(Cell** Mesh, double* death_prob);
 
-void getDeathProb(GridCell***, double*);
+void getAgeGroups(Cell** Mesh, int* groups);
 
-void printPopulation(FILE*, GridCell***, int);
+void printPopulation(FILE* output, Cell** Mesh, int t);
 
-void proccessBoundaries(GridCell***);
+void initializeMesh(Cell** Mesh);
 
-void initializeMesh(GridCell***, GridCell***);
+int fillMesh(Cell** Mesh, MTRand* mt);
 
-int fillMesh(GridCell***, MTRand*);
+void outputAsBitmap(Cell** Mesh, char* str, int w, int h);
 
-void printToBitmap(GridCell***, char*, int, int);
+void manageBoundaries(Cell** Mesh);
+
+void swapMesh(Cell** MeshA, Cell** MeshB);
 
 #endif // __MESH_MANIPULATION_HPP_INCLUDED__

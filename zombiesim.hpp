@@ -68,6 +68,8 @@ struct Cell
 #define HUMAN 	0
 #define ZOMBIE 	1
 #define EMPTY	2
+#define MALE 3
+#define FEMALE 4
 
 /*Human age modifiers*/
 #define YOUNG	0
