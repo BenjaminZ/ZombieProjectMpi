@@ -104,6 +104,7 @@ void printPopulation(FILE* output, Cell** Mesh, int t)
 			else if(Mesh[i][j].celltype == ZOMBIE) zombies += 1;
 		}
 	}
+	printf("%d\t%d\t%d\t%d\n", t, male, female, zombies);
 	fprintf(output, "%d\t%d\t%d\t%d\n", t, male, female, zombies);
 	return;
 }
@@ -186,7 +187,8 @@ int fillMesh(Cell** Mesh, MTRand* mt)
 			else if(aux_rand < NT_POP_DENSITY + (NUM_OF_ZOMBIES/(double)(SIZE_I*SIZE_J)))
 			{
 				Mesh[i][j].celltype = ZOMBIE;
-				Mesh[i][j].date = 0; 	
+				Mesh[i][j].date = 0;
+				n_zombies += 1; 	
 			}
 		}	
 	}

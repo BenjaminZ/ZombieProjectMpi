@@ -37,7 +37,7 @@ struct Cell
 #define INFECTION_PROB 0.2
 #define KILL_ZOMBIE 0.05
 #define NUM_OF_ZOMBIES 3.0
-#define ZOMBIE_LIFESPAN 2
+#define ZOMBIE_LIFESPAN 4*365
 #define ZOMBIE_MOVE 0.2
 
 /*Output files. Don't forget "/" at the end.*/

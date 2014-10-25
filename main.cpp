@@ -43,7 +43,7 @@ int main(int argc, char* argv[])
 
 	Cell *MeshA[SIZE_I+2];
 	Cell *MeshB[SIZE_I+2];
-
+	
 	bool *locks = new bool[SIZE_I+2];
 
 	time(&begin);
@@ -79,7 +79,8 @@ int main(int argc, char* argv[])
 		double prob_birth = 0.0, death_prob[3] = {0.0, 0.0, 0.0};
 		int babycounter = 0, non_empty = 0;
 
-		printPopulation(output, MeshA, n);
+		prob_birth = (double)getBirthRate(MeshA)/(double)getPairingNumber(MeshA);
+
 		#if defined(_OPENMP)
 		#pragma omp parallel for default(none) firstprivate(babycounter, non_empty) shared(mt_thread, MeshA, MeshB, locks, n, prob_birth, death_prob)
 		#endif
@@ -96,7 +97,7 @@ int main(int argc, char* argv[])
 			{
 				if(babycounter > 0)
 				{
-					if(!(MeshA[i][j].celltype == EMPTY && MeshB[i][j].celltype == EMPTY))
+					if(!(MeshA[i][j].celltype == EMPTY))
 					{
 						non_empty += 1;
 						if(non_empty == 4)
@@ -107,6 +108,16 @@ int main(int argc, char* argv[])
 					}
 					else
 					{
+						if(!(MeshB[i][j].celltype == EMPTY))
+						{
+							non_empty += 1;
+							if(non_empty == 4)
+							{
+								non_empty = 0;
+								babycounter -= 1;
+							}
+							continue;
+						}
 						if(mt_thread[n_thread].randExc() < (NT_MALE_PERCENTAGE/100))
 						{
 							MeshB[i][j].celltype = HUMAN;
@@ -121,6 +132,7 @@ int main(int argc, char* argv[])
 							MeshB[i][j].age_group = YOUNG;
 							MeshB[i][j].gender = FEMALE;
 						}
+
 						babycounter -= 1;
 						non_empty = 0;
 						continue;
@@ -150,9 +162,13 @@ int main(int argc, char* argv[])
 		{
 			sprintf(aux_str, "%sIP_%.3lf_ST_%05d.bmp", BITMAP_PATH, INFECTION_PROB, n);
 			outputAsBitmap(MeshA, aux_str, SIZE_I+2, SIZE_J+2);
+			printPopulation(output, MeshA, n);
 		}
 	}
 
+	/*
+	Finishes the output
+	*/
 	sprintf(aux_str, "%sIP_%.3lf_ST_%05d.bmp", BITMAP_PATH, INFECTION_PROB, n);
 	outputAsBitmap(MeshA, aux_str, SIZE_I+2, SIZE_J+2);
 	printPopulation(output, MeshA, n);
@@ -160,6 +176,9 @@ int main(int argc, char* argv[])
 	fprintf(output, "\nTime spent: %.5f\n", (float)(end-begin));
 	fclose(output);
 
+	/*
+	Releases memory resources
+	*/
 	for(i = 0; i < SIZE_I+2; i++) free(MeshA[i]);
 	for(i = 0; i < SIZE_I+2; i++) free(MeshB[i]);
 	

@@ -2,7 +2,44 @@
 
 int executeBirthControl(Cell** Mesh, int i, int j, double prob_birth, MTRand* mt)
 {
-	return FALSE;
+	int flags[4] = {FALSE, FALSE, FALSE, FALSE};
+	double prob;
+
+	prob = mt->randExc();
+
+	if(Mesh[i][j].gender == MALE)
+	{
+		if(Mesh[i-1][j].celltype == HUMAN)
+			if(Mesh[i-1][j].gender == FEMALE)
+				flags[0] = TRUE;
+		if(Mesh[i][j+1].celltype == HUMAN)
+			if(Mesh[i][j+1].gender == FEMALE)
+				flags[1] = TRUE;
+		if(Mesh[i+1][j].celltype == HUMAN)
+			if(Mesh[i+1][j].gender == FEMALE)
+				flags[2] = TRUE;
+		if(Mesh[i][j-1].celltype == HUMAN)
+			if(Mesh[i][j-1].gender == FEMALE)
+				flags[3] = TRUE;
+	}
+	else
+	{
+		if(Mesh[i-1][j].celltype == HUMAN)
+			if(Mesh[i-1][j].gender == MALE)
+				flags[0] = TRUE;
+		if(Mesh[i][j+1].celltype == HUMAN)
+			if(Mesh[i][j+1].gender == MALE)
+				flags[1] = TRUE;
+		if(Mesh[i+1][j].celltype == HUMAN)
+			if(Mesh[i+1][j].gender == MALE)
+				flags[2] = TRUE;
+		if(Mesh[i][j-1].celltype == HUMAN)
+			if(Mesh[i][j-1].gender == MALE)
+				flags[3] = TRUE;
+	}
+	if(prob < prob_birth) 
+		return flags[0] || flags[1] || flags[2] || flags[3];
+	else return FALSE;
 }
 
 void executeMovement(Cell** MeshA, Cell** MeshB, int i, int j, MTRand* mt)
@@ -89,6 +126,7 @@ void executeInfection(Cell** Mesh, int i, int j, int n, MTRand* mt)
 	vector<int> pos_i, pos_j;
 
 	random_inf = mt->randExc();
+	
 	if(random_inf > INFECTION_PROB && random_inf < 1 - KILL_ZOMBIE) return;
 	
 	
@@ -114,29 +152,25 @@ void executeInfection(Cell** Mesh, int i, int j, int n, MTRand* mt)
 	}
 
 	if(pos_i.size() == 0) return;
+	
 	else
 	{
-		if(random_inf >= (1 - KILL_ZOMBIE))
+		if(random_inf >= (1.0 - KILL_ZOMBIE))
 		{
 			Mesh[i][j].celltype = EMPTY;
 			return;
 		}
 
 		random_num = mt->randExc();
-		aux = 1/((double)pos_i.size());
+		aux = (1.0)/((double)pos_i.size());
 
-		for(i = 0, vector_aux = aux; i < pos_i.size(); i++)
+		for(int k = 0, vector_aux = aux; k < pos_i.size(); k++, vector_aux += aux)
 		{
 			if(random_num < vector_aux)
 			{
-				Mesh[pos_i[i]][pos_j[i]].celltype = ZOMBIE;
-				Mesh[pos_i[i]][pos_j[i]].date = n;
+				Mesh[(pos_i[k])][(pos_j[k])].celltype = ZOMBIE;
+				Mesh[(pos_i[k])][(pos_j[k])].date = n;
 				break;
-			}
-			else
-			{
-				vector_aux += aux;
-				continue;
 			}
 		}
 	}
