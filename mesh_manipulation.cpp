@@ -9,26 +9,35 @@ int getPopulation(Cell** Mesh)
 	return total;
 }
 
-double getPairingNumber(Cell** Mesh)
+void getGenderNumber(Cell** Mesh, int *genders)
+{
+	genders[0] = 0;
+	genders[1] = 0;
+
+	for(int i = 1; i <= SIZE_I; i++)
+	{
+		for(int j = 1; j <= SIZE_J; j++)
+		{
+			if(Mesh[i][j].celltype == HUMAN)
+			{
+				if(Mesh[i][j].gender == MALE) genders[0] += 1;
+				else genders[1] += 1;
+			}
+		}
+	}
+	return;
+}
+double getPairingNumber(int *genders)
 {
 	int i, j;
-	double male, female;
+	double male = (double)genders[0];
+	double female = (double) genders[1];
 	double no_female, paired_female, allcells;
 	double no_male, paired_male;
 	double pob_male, pob_female;
 
-	for(i = 1; i <= SIZE_I; i++)
-	{
-		for(j = 1; j <= SIZE_J; j++)
-		{
-			if(Mesh[i][j].celltype == HUMAN)
-			{
-				if(Mesh[i][j].gender == MALE) male += 1.0;
-				else female += 1.0;
-			}
-		}
-	}
-	allcells = (double)(SIZE_I*SIZE_J);
+	//2(two meshes)*SIZE_I*SIZE_J
+	allcells = (double)(2*SIZE_I*SIZE_J);
 	
 	no_female = (allcells - female)/allcells;
 	paired_female = 1 - pow(no_female, 4);
@@ -42,19 +51,16 @@ double getPairingNumber(Cell** Mesh)
 	else return pob_male;
 }
 
-double getBirthRate(Cell** Mesh)
+double getBirthRate(Cell** Mesh, int population)
 {
-	return ((double)getPopulation(Mesh))*(NT_BIRTHS_PER_DAY)/(NT_POP);
+	return ((double)population)*(NT_BIRTHS_PER_DAY)/(NT_POP);
 }
 
-void getDeathProb(Cell** Mesh, double* death_prob)
+void getDeathProb(double* death_prob, int population, int *groups)
 {
 	double deaths;
-	int groups[3] = {0,0,0}, population;
 
-	population = getPopulation(Mesh);
 	deaths = NT_DEATHS_PER_DAY*((double)population)/NT_POP;
-	getAgeGroups(Mesh, groups);
 
 	death_prob[0] = deaths*NT_YOUNG_DEATH/((double)groups[0]);
 	death_prob[1] = deaths*NT_ADULT_DEATH/((double)groups[1]);
@@ -104,7 +110,7 @@ void printPopulation(FILE* output, Cell** Mesh, int t)
 			else if(Mesh[i][j].celltype == ZOMBIE) zombies += 1;
 		}
 	}
-	printf("%d\t%d\t%d\t%d\n", t, male, female, zombies);
+	//printf("%d\t%d\t%d\t%d\n", t, male, female, zombies);
 	fprintf(output, "%d\t%d\t%d\t%d\n", t, male, female, zombies);
 	return;
 }
@@ -246,17 +252,15 @@ void outputAsBitmap(Cell** Mesh, char* str, int w, int h)
 	{
 	    for(int j = 0; j < h; j++)
 		{
-		    x = i; 
-		    y = (h-1)-j;
 		    r = red[i][j]*255;
 		    g = green[i][j]*255;
 		    b = blue[i][j]*255;
 		    if (r > 255) r = 255;
 		    if (g > 255) g = 255;
 		    if (b > 255) b = 255;
-		    img[(x+y*w)*3+2] = (unsigned char)(r);
-		    img[(x+y*w)*3+1] = (unsigned char)(g);
-		    img[(x+y*w)*3+0] = (unsigned char)(b);
+		    img[(i*w+j)*3+2] = (unsigned char)(r);
+		    img[(i*w+j)*3+1] = (unsigned char)(g);
+		    img[(i*w+j)*3+0] = (unsigned char)(b);
 		}
 	}
 

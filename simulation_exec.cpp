@@ -119,7 +119,7 @@ void executeMovement(Cell** MeshA, Cell** MeshB, int i, int j, MTRand* mt)
 	}
 }
 
-void executeInfection(Cell** Mesh, int i, int j, int n, MTRand* mt)
+void executeInfection(Cell** MeshA, int i, int j, int n, MTRand* mt)
 {
 	double random_num, random_inf, vector_aux, aux;
 	
@@ -129,23 +129,28 @@ void executeInfection(Cell** Mesh, int i, int j, int n, MTRand* mt)
 	
 	if(random_inf > INFECTION_PROB && random_inf < 1 - KILL_ZOMBIE) return;
 	
+	pos_i.clear();
+	pos_j.clear();
 	
-	if(Mesh[i-1][j].celltype == HUMAN) 
+	if(MeshA[i-1][j].celltype == HUMAN) 
 	{
 		pos_i.push_back(i-1);
 		pos_j.push_back(j);
 	}
-	if(Mesh[i][j+1].celltype == HUMAN)
+
+	if(MeshA[i][j+1].celltype == HUMAN)
 	{
 		pos_i.push_back(i);
 		pos_j.push_back(j+1);
 	}
-	if(Mesh[i+1][j].celltype == HUMAN)
+
+	if(MeshA[i+1][j].celltype == HUMAN)
 	{
 		pos_i.push_back(i+1);
 		pos_j.push_back(j);
 	}
-	if(Mesh[i][j-1].celltype == HUMAN)
+
+	if(MeshA[i][j-1].celltype == HUMAN)
 	{
 		pos_i.push_back(i);
 		pos_j.push_back(j-1);
@@ -157,7 +162,7 @@ void executeInfection(Cell** Mesh, int i, int j, int n, MTRand* mt)
 	{
 		if(random_inf >= (1.0 - KILL_ZOMBIE))
 		{
-			Mesh[i][j].celltype = EMPTY;
+			MeshA[i][j].celltype = EMPTY;
 			return;
 		}
 
@@ -168,8 +173,8 @@ void executeInfection(Cell** Mesh, int i, int j, int n, MTRand* mt)
 		{
 			if(random_num < vector_aux)
 			{
-				Mesh[(pos_i[k])][(pos_j[k])].celltype = ZOMBIE;
-				Mesh[(pos_i[k])][(pos_j[k])].date = n;
+				MeshA[(pos_i[k])][(pos_j[k])].celltype = ZOMBIE;
+				MeshA[(pos_i[k])][(pos_j[k])].date = n;
 				break;
 			}
 		}

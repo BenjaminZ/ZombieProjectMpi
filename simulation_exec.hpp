@@ -8,7 +8,7 @@ int executeBirthControl(Cell** Mesh, int i, int j, double prob_birth, MTRand* mt
 
 void executeMovement(Cell** MeshA, Cell** MeshB, int i, int j, MTRand* mt);
 
-void executeInfection(Cell** Mesh, int i, int j, int n, MTRand* mt);
+void executeInfection(Cell** MeshA, int i, int j, int n, MTRand* mt);
 
 void executeDeathControl(Cell** Mesh, int i, int j, double* prob_death, int n, MTRand* mt);
 
