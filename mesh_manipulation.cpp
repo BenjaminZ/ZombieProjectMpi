@@ -4,7 +4,7 @@ int getPopulation(Cell** Mesh)
 {
 	int total = 0;
 	for(int i = 1; i <= SIZE_I; i++)
-		for(int j; j <= SIZE_J; j++)
+		for(int j = 0; j <= SIZE_J; j++)
 			if(Mesh[i][j].celltype == HUMAN) total += 1;
 	return total;
 }

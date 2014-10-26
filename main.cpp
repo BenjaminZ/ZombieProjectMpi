@@ -362,7 +362,7 @@ void checkMPI_mesh_MIDDLE(Cell** Mesh, Cell* buffer, int rank)
 	{
 		for(int j = 1; j <= SIZE_J; j++)
 		{
-			if(Mesh[1][j].celltype == EMPTY && buffer[j].celltype) continue;
+			if(Mesh[1][j].celltype == EMPTY && buffer[j].celltype.celltype == EMPTY) continue;
 			else
 			{
 				/*
