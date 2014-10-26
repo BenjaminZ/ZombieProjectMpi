@@ -111,11 +111,11 @@ int main(int argc, char* argv[])
 	/*
 	Output definition
 	*/
-	sprintf(aux_str, "%d_%soutput.txt", rank, OUTPUT_PATH);
+	sprintf(aux_str, "%d_output.txt", rank);
 	output = fopen(aux_str, "w+");
 	fprintf(output, "Time\tMale\tFemale\tZombie\n");
-	sprintf(aux_str, "%d_%sIP_%.3lf_ST_%05d.bmp", rank, BITMAP_PATH, INFECTION_PROB, 0);
-	outputAsBitmap(MeshA, aux_str, SIZE_I+2, SIZE_J+2);
+	//sprintf(aux_str, "%d_%sIP_%.3lf_ST_%05d.bmp", rank, BITMAP_PATH, INFECTION_PROB, 0);
+	//outputAsBitmap(MeshA, aux_str, SIZE_I+2, SIZE_J+2);
 	printPopulation(output, MeshA, 0);
 	
 	/*
@@ -294,8 +294,8 @@ int main(int argc, char* argv[])
 
 		if(! (n % BITMAP_STEP))
 		{
-			sprintf(aux_str, "%d_%sIP_%.3lf_ST_%05d.bmp", rank, BITMAP_PATH, INFECTION_PROB, n);
-			outputAsBitmap(MeshA, aux_str, SIZE_I+2, SIZE_J+2);
+			//sprintf(aux_str, "%d_%sIP_%.3lf_ST_%05d.bmp", rank, BITMAP_PATH, INFECTION_PROB, n);
+			//outputAsBitmap(MeshA, aux_str, SIZE_I+2, SIZE_J+2);
 			printPopulation(output, MeshA, n);
 		}
 	}
@@ -303,8 +303,8 @@ int main(int argc, char* argv[])
 	/*
 	Finishes the output
 	*/
-	sprintf(aux_str, "%d_%sIP_%.3lf_ST_%05d.bmp",rank, BITMAP_PATH, INFECTION_PROB, n);
-	outputAsBitmap(MeshA, aux_str, SIZE_I+2, SIZE_J+2);
+	//sprintf(aux_str, "%d_%sIP_%.3lf_ST_%05d.bmp",rank, BITMAP_PATH, INFECTION_PROB, n);
+	//outputAsBitmap(MeshA, aux_str, SIZE_I+2, SIZE_J+2);
 	printPopulation(output, MeshA, n);
 	fclose(output);
 
