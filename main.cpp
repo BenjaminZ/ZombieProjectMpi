@@ -354,7 +354,10 @@ void checkMPI_mesh_MIDDLE(Cell** Mesh, Cell* buffer, int rank)
 					- The cell was empty, but a baby was created. Ignore the baby. (Check if it is possible)
 				*/
 				if(Mesh[SIZE_I][j].celltype == EMPTY) continue;
-				else Mesh[SIZE_I][j] = buffer[j];
+				else
+				{
+					Mesh[SIZE_I][j] = buffer[j];
+				}
 			}
 		}
 	}
