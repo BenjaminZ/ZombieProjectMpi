@@ -27,9 +27,9 @@ struct Cell
 };
 
 /*Simulation parameters*/
-#define STEPS	3650
-#define SIZE_I	500
-#define SIZE_J	500
+#define STEPS	500
+#define SIZE_I	100
+#define SIZE_J	100
 #define TRUE	1
 #define FALSE	0
 

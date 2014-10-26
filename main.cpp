@@ -6,6 +6,7 @@
 void checkMPI_mesh_END(Cell** MeshB, Cell* buffer, int rank);
 void checkMPI_mesh_MIDDLE(Cell** Mesh, Cell* buffer, int rank);
 void eraseRow_mesh(Cell** Mesh, int row);
+void getAllData(Cell** Mesh, int *data);
 
 /*
 OpenMP locks.
@@ -59,22 +60,27 @@ int main(int argc, char* argv[])
 
 	Cell *MeshA[SIZE_I+2];
 	Cell *MeshB[SIZE_I+2];
-	
+	bool *locks = new bool[SIZE_I+2];
+
 	/*
 	Initialize MPI.
 	*/
-	int rank, size;
+	int rank, size, provided;
 
-	MPI_Init(&argc, &argv);
+	MPI_Init_thread(&argc, &argv, MPI_THREAD_FUNNELED, &provided);
+	
+	if(provided != MPI_THREAD_FUNNELED) return -2;
+
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 	MPI_Comm_size(MPI_COMM_WORLD, &size);
 
 	/*
-	This code is meant to work with 2 nodes only.
+	This code is meant to work with 2 tasks in 2 nodes only.
 	*/
+
 	if(size != 2) return -1;
 
-	bool *locks = new bool[SIZE_I+2];
+	
 	/*
 	MPI declarations.
 	Define a MPI_Datatype to the Cell struct.
@@ -118,76 +124,70 @@ int main(int argc, char* argv[])
 	//outputAsBitmap(MeshA, aux_str, SIZE_I+2, SIZE_J+2);
 	printPopulation(output, MeshA, 0);
 	
+	Cell empty_cell;
+
+	empty_cell.celltype = EMPTY;
+	empty_cell.date = 0;
+	empty_cell.gender = 0;
+	empty_cell.age_group = 0;
+	
 	/*
 	Main loop
 	*/
 	for(n = 1; n <= STEPS; n++)
 	{
-		int other_population, this_population;
-		
+		Cell buffer[SIZE_J+2];
+
 		/*
-		The grid statistics, such as population, have to be synchronized.
-		Also, the last line of Rank0 has to be copied to the first (ghost) line of Rank1,
-		as well as, the first of Rank1 has to be copied to the last (ghost) line of Rank0.
+		Exchange boundaries.
 		*/
-		this_population = getPopulation(MeshA);
-		
-		MPI_Send(&this_population, 1, MPI_INT, (rank+1)%2, MPI_POP, MPI_COMM_WORLD);
-		MPI_Recv(&other_population, 1, MPI_INT, (rank+1)%2, MPI_POP, MPI_COMM_WORLD, &stat);
-
-		this_population += other_population;
-
 		if(!rank)
 			MPI_Send(MeshA[SIZE_I], SIZE_J+2, cell_type, (rank+1)%2, MPI_START, MPI_COMM_WORLD);
 		else
 			MPI_Send(MeshA[1], SIZE_J+2, cell_type, (rank+1)%2, MPI_START, MPI_COMM_WORLD);
 
+		MPI_Recv(buffer, SIZE_J+2, cell_type, (rank+1)%2, MPI_START, MPI_COMM_WORLD, &stat);
+
 		if(!rank)
-			MPI_Recv(MeshA[SIZE_I+1], SIZE_J+2, cell_type, (rank+1)%2, MPI_START, MPI_COMM_WORLD, &stat); 
+			for(int j = 0; j < SIZE_J+2; j++)
+				MeshA[SIZE_I+1][j] = buffer[j];
 		else
-			MPI_Recv(MeshA[0], SIZE_J+2, cell_type, (rank+1)%2, MPI_START, MPI_COMM_WORLD, &stat);
+			for(int j = 0; j < SIZE_J+2; j++)
+				MeshA[0][j] = buffer[j];
 
-		
+		/*
+		Exchange statistics.
+		*/
 		double prob_birth = 0.0;
-		int babycounter = 0, non_empty = 0;
-		int this_genders[2], other_genders[2];
 		double death_prob[3] = {0.0, 0.0, 0.0};
-		int this_groups[3], other_groups[3];
+		int this_vector[6], other_vector[6];
 
-		/*
-		Exchange gender groups size to calculate birth probability.
-		*/
-		getGenderNumber(MeshA, this_genders);
-		/*
-		Exchange age groups size to calculate death probability.
-		*/
-		getAgeGroups(MeshA, this_groups);
+		getAllData(MeshA, this_vector);
 
-		int this_vector[5], other_vector[5];
+		MPI_Send(this_vector, 6, MPI_INT, (rank+1)%2, MPI_GROUPS, MPI_COMM_WORLD);
+		MPI_Recv(other_vector, 6, MPI_INT, (rank+1)%2, MPI_GROUPS, MPI_COMM_WORLD, &stat);
 
-		this_vector[0] = this_genders[0];
-		this_vector[1] = this_genders[1];
-		this_vector[2] = this_groups[0];
-		this_vector[3] = this_groups[1];
-		this_vector[4] = this_groups[2];
+		for(int i = 0; i < 6; i++)
+			this_vector[i] += other_vector[i];
 
-		MPI_Send(this_vector, 5, MPI_INT, (rank+1)%2, MPI_GROUPS, MPI_COMM_WORLD);
-		MPI_Recv(other_vector, 5, MPI_INT, (rank+1)%2, MPI_GROUPS, MPI_COMM_WORLD, &stat);
+		int this_population, this_genders[2], this_groups[3];
 
-		this_genders[0] += other_vector[0];
-		this_genders[1] += other_vector[1];
-		this_groups[0]  += other_vector[2];
-		this_groups[1]  += other_vector[3];
-		this_groups[2]  += other_vector[4];
+		this_population = this_vector[0];
+		this_genders[0] = this_vector[1];
+		this_genders[1] = this_vector[2];
+		this_groups[0] 	= this_vector[3];
+		this_groups[1]  = this_vector[4];
+		this_groups[2]  = this_vector[5];
 
 		prob_birth = getBirthRate(MeshA, this_population)/getPairingNumber(this_genders);
+
 		getDeathProb(death_prob, this_population, this_groups);
 		
 		/*
 		Executes birth control for humans or infection for zombies
 		*/
 		#if defined(_OPENMP)
-		#pragma omp parallel for default(none) firstprivate(babycounter, non_empty) shared(mt_thread, MeshA, MeshB, locks, n, prob_birth, death_prob) num_threads(16)
+		#pragma omp parallel for default(none) shared(mt_thread, MeshA, MeshB, locks, n, prob_birth, death_prob) num_threads(16)
 		#endif
 
 		for(int i = 1; i <= SIZE_I; i++)
@@ -215,12 +215,6 @@ int main(int argc, char* argv[])
 		/*
 		Corrects the Mesh.
 		*/
-		Cell empty_cell;
-
-		empty_cell.celltype = EMPTY;
-		empty_cell.date = 0;
-		empty_cell.gender = 0;
-		empty_cell.age_group = 0;
 
 		MeshA[0][0] = empty_cell;
 		MeshA[SIZE_I+1][0] = empty_cell;
@@ -230,7 +224,6 @@ int main(int argc, char* argv[])
 		/*
 		Synchronizes the meshes.
 		*/
-		Cell buffer[SIZE_J];
 		
 		if(!rank)
 			MPI_Send(MeshA[SIZE_I+1], SIZE_J+2, cell_type, (rank+1)%2, MPI_MIDDLE, MPI_COMM_WORLD);
@@ -242,20 +235,24 @@ int main(int argc, char* argv[])
 		checkMPI_mesh_MIDDLE(MeshA, buffer, rank);
 
 		if(!rank)
-			MPI_Send(MeshA[SIZE_I], SIZE_J+2, cell_type, (rank+1)%2, MPI_MIDDLE, MPI_COMM_WORLD);
+			MPI_Send(MeshA[SIZE_I], SIZE_J+2, cell_type, (rank+1)%2, MPI_MIDDLE_2, MPI_COMM_WORLD);
 		else
 			MPI_Send(MeshA[1], SIZE_J+2, cell_type, (rank+1)%2, MPI_MIDDLE_2, MPI_COMM_WORLD);
 
+		MPI_Recv(buffer, SIZE_J+2, cell_type, (rank+1)%2, MPI_MIDDLE_2, MPI_COMM_WORLD, &stat);
+
 		if(!rank)
-			MPI_Recv(MeshA[SIZE_I+1], SIZE_J+2, cell_type, (rank+1)%2, MPI_MIDDLE, MPI_COMM_WORLD, &stat); 
+			for(int j = 0; j < SIZE_J+2; j++)
+				MeshA[SIZE_I+1][j] = buffer[j];
 		else
-			MPI_Recv(MeshA[0], SIZE_J+2, cell_type, (rank+1)%2, MPI_MIDDLE_2, MPI_COMM_WORLD, &stat); 
+			for(int j = 0; j < SIZE_J+2; j++)
+				MeshA[0][j] = buffer[j];
 
 		/*
 		Executes movement.
 		*/
 		#if defined(_OPENMP)
-		#pragma omp parallel for default(none) firstprivate(babycounter, non_empty) shared(mt_thread, MeshA, MeshB, locks, n, prob_birth, death_prob) num_threads(16)
+		#pragma omp parallel for default(none) shared(mt_thread, MeshA, MeshB, locks, n, prob_birth, death_prob) num_threads(16)
 		#endif
 
 		for(int i = 1; i <= SIZE_I; i++)
@@ -275,11 +272,11 @@ int main(int argc, char* argv[])
 		}
 
 		if(!rank)
-			MPI_Send(MeshB[SIZE_I+1], SIZE_J+2, cell_type, (rank+1)%2, MPI_MIDDLE, MPI_COMM_WORLD);
+			MPI_Send(MeshB[SIZE_I+1], SIZE_J+2, cell_type, (rank+1)%2, MPI_END, MPI_COMM_WORLD);
 		else
-			MPI_Send(MeshB[0], SIZE_J+2, cell_type, (rank+1)%2, MPI_MIDDLE_2, MPI_COMM_WORLD);
+			MPI_Send(MeshB[0], SIZE_J+2, cell_type, (rank+1)%2, MPI_END, MPI_COMM_WORLD);
 
-		MPI_Recv(buffer, SIZE_J, cell_type, (rank+1)%2, MPI_MIDDLE_2, MPI_COMM_WORLD, &stat);
+		MPI_Recv(buffer, SIZE_J+2, cell_type, (rank+1)%2, MPI_END, MPI_COMM_WORLD, &stat);
 
 		checkMPI_mesh_END(MeshB, buffer, rank);
 
@@ -314,9 +311,45 @@ int main(int argc, char* argv[])
 	for(i = 0; i < SIZE_I+2; i++) free(MeshA[i]);
 	for(i = 0; i < SIZE_I+2; i++) free(MeshB[i]);
 	
+	MPI_Finalize();
+
 	return 0;
 }
 
+void getAllData(Cell** Mesh, int *data)
+{
+	for(int i = 0; i < 6; i++)
+		data[i] = 0;
+
+	for(int i = 1; i <= SIZE_I; i++)
+	{
+		for(int j = 1; j <= SIZE_J; j++)
+		{
+			if(Mesh[i][j].celltype == HUMAN)
+			{
+				data[0] += 1;
+
+				if(Mesh[i][j].gender == MALE)
+					data[1] += 1;
+				else
+					data[2] += 1;
+
+				switch(Mesh[i][j].age_group)
+				{
+					case YOUNG:
+						data[3] += 1;
+						break;
+					case ADULT:
+						data[4] += 1;
+						break;
+					case ELDER:
+						data[5] += 1;
+						break;
+				}
+			}
+		}
+	}
+}
 /*
 New functions to deal with MPI constraints.
 */
