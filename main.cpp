@@ -60,8 +60,6 @@ int main(int argc, char* argv[])
 	Cell *MeshA[SIZE_I+2];
 	Cell *MeshB[SIZE_I+2];
 	
-	bool *locks = new bool[SIZE_I+2];
-
 	/*
 	Initialize MPI.
 	*/
@@ -70,12 +68,13 @@ int main(int argc, char* argv[])
 	MPI_Init(&argc, &argv);
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 	MPI_Comm_size(MPI_COMM_WORLD, &size);
-	
+
 	/*
 	This code is meant to work with 2 nodes only.
 	*/
 	if(size != 2) return -1;
 
+	bool *locks = new bool[SIZE_I+2];
 	/*
 	MPI declarations.
 	Define a MPI_Datatype to the Cell struct.
@@ -188,7 +187,7 @@ int main(int argc, char* argv[])
 		Executes birth control for humans or infection for zombies
 		*/
 		#if defined(_OPENMP)
-		#pragma omp parallel for default(none) firstprivate(babycounter, non_empty) shared(mt_thread, MeshA, MeshB, locks, n, prob_birth, death_prob)
+		#pragma omp parallel for default(none) firstprivate(babycounter, non_empty) shared(mt_thread, MeshA, MeshB, locks, n, prob_birth, death_prob) num_threads(16)
 		#endif
 
 		for(int i = 1; i <= SIZE_I; i++)
@@ -256,7 +255,7 @@ int main(int argc, char* argv[])
 		Executes movement.
 		*/
 		#if defined(_OPENMP)
-		#pragma omp parallel for default(none) firstprivate(babycounter, non_empty) shared(mt_thread, MeshA, MeshB, locks, n, prob_birth, death_prob)
+		#pragma omp parallel for default(none) firstprivate(babycounter, non_empty) shared(mt_thread, MeshA, MeshB, locks, n, prob_birth, death_prob) num_threads(16)
 		#endif
 
 		for(int i = 1; i <= SIZE_I; i++)
