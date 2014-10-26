@@ -6,11 +6,13 @@
 
 int getPopulation(Cell** Mesh);
 
-double getPairingNumber(Cell** Mesh);
+double getPairingNumber(int *genders);
 
-double getBirthRate(Cell** Mesh);
+double getBirthRate(Cell** Mesh, int population);
 
-void getDeathProb(Cell** Mesh, double* death_prob);
+void getGenderNumber(Cell** Mesh, int *genders);
+
+void getDeathProb(double* death_prob, int population, int *groups);
 
 void getAgeGroups(Cell** Mesh, int* groups);
 

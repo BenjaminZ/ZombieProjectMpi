@@ -1,6 +1,6 @@
 #include "simulation_exec.hpp"
 
-int executeBirthControl(Cell** Mesh, int i, int j, double prob_birth, MTRand* mt)
+void executeBirthControl(Cell** Mesh, int i, int j, int n, double prob_birth, MTRand* mt)
 {
 	int flags[4] = {FALSE, FALSE, FALSE, FALSE};
 	double prob;
@@ -37,9 +37,80 @@ int executeBirthControl(Cell** Mesh, int i, int j, double prob_birth, MTRand* mt
 			if(Mesh[i][j-1].gender == MALE)
 				flags[3] = TRUE;
 	}
-	if(prob < prob_birth) 
-		return flags[0] || flags[1] || flags[2] || flags[3];
-	else return FALSE;
+	if(prob < prob_birth & (flags[0] || flags[1] || flags[2] || flags[3])) 
+	{
+		vector<int> pos_i, pos_j;
+
+		/*Top line*/
+		if(Mesh[i-1][j-1].celltype == EMPTY)
+		{
+			pos_i.push_back(i-1);
+			pos_j.push_back(j-1);
+		}
+		if(Mesh[i-1][j].celltype == EMPTY) 
+		{
+			pos_i.push_back(i-1);
+			pos_j.push_back(j);
+		}
+		if(Mesh[i-1][j+1].celltype == EMPTY) 
+		{
+			pos_i.push_back(i-1);
+			pos_j.push_back(j+1);
+		}
+		/*Middle line*/
+		if(Mesh[i][j-1].celltype == EMPTY)
+		{
+			pos_i.push_back(i);
+			pos_j.push_back(j-1);
+		}
+		if(Mesh[i][j+1].celltype == EMPTY)
+		{
+			pos_i.push_back(i);
+			pos_j.push_back(j+1);
+		}
+		/*Bottom line*/
+		if(Mesh[i+1][j-1].celltype == EMPTY)
+		{
+			pos_i.push_back(i+1);
+			pos_j.push_back(j-1);
+		}
+		if(Mesh[i+1][j].celltype == EMPTY) 
+		{
+			pos_i.push_back(i+1);
+			pos_j.push_back(j);
+		}
+		if(Mesh[i+1][j+1].celltype == EMPTY) 
+		{
+			pos_i.push_back(i+1);
+			pos_j.push_back(j+1);
+		}
+
+		double random_num, aux, vector_aux;
+		
+		random_num = mt->randExc();
+		aux = (1.0)/((double)pos_i.size());
+
+		for(int k = 0, vector_aux = aux; k < pos_i.size(); k++, vector_aux += aux)
+		{
+			if(random_num < vector_aux)
+			{
+				Cell baby;
+
+				random_num = mt->randExc();
+				baby.celltype = HUMAN;
+				if(random_num < NT_MALE_PERCENTAGE/100) baby.gender = MALE;
+				else baby.gender = FEMALE;
+				baby.date = n;
+				baby.age_group = YOUNG;
+
+				Mesh[(pos_i[k])][(pos_j[k])] = baby;
+				break;
+			}
+		}
+		pos_i.clear();
+		pos_j.clear();
+	}
+	else return;
 }
 
 void executeMovement(Cell** MeshA, Cell** MeshB, int i, int j, MTRand* mt)

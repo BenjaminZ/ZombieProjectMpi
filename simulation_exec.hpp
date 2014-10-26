@@ -4,7 +4,7 @@
 #include "MersenneTwister.h"
 #include "zombiesim.hpp"
 
-int executeBirthControl(Cell** Mesh, int i, int j, double prob_birth, MTRand* mt);
+void executeBirthControl(Cell** Mesh, int i, int j, int n, double prob_birth, MTRand* mt);
 
 void executeMovement(Cell** MeshA, Cell** MeshB, int i, int j, MTRand* mt);
 
